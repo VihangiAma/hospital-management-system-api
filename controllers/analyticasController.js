@@ -50,7 +50,7 @@ export const getDashboardAnalytics = async (req, res) => {
     // 6. Billing & Revenue Summary
     const [billing] = await db.execute(`
       SELECT 
-        SUM(total_amount) AS totalRevenue,
+        COALESCE(SUM(total_amount), 0) AS totalRevenue,
         SUM(CASE WHEN status = 'Paid' THEN total_amount ELSE 0 END) AS paid,
         SUM(CASE WHEN status = 'Unpaid' THEN total_amount ELSE 0 END) AS unpaid
       FROM billing
@@ -69,6 +69,7 @@ export const getDashboardAnalytics = async (req, res) => {
     });
 
   } catch (err) {
+    console.error("Dashboard Analytics Error:", err);
     res.status(500).json({ message: "Server Error", error: err });
   }
 };

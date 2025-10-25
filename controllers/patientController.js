@@ -9,11 +9,14 @@ export const addPatient = async (req, res) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    await db.execute(
-      `INSERT INTO patients (patient_code, first_name, last_name, gender, age, contact_number, address, email)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [patient_code, first_name, last_name, gender, age, contact_number, address, email]
-    );
+    const sql = `
+      INSERT INTO patients (patient_code, first_name, last_name, gender, age, contact_number, address, email)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    await db.query(sql, [
+      patient_code, first_name, last_name, gender, age, contact_number, address, email
+    ]);
 
     res.status(201).json({ message: "Patient added successfully" });
   } catch (error) {
@@ -25,7 +28,7 @@ export const addPatient = async (req, res) => {
 // 📋 Get all patients
 export const getAllPatients = async (req, res) => {
   try {
-    const [patients] = await db.execute("SELECT * FROM patients ORDER BY date_registered DESC");
+    const [patients] = await db.query("SELECT * FROM patients ORDER BY date_registered DESC");
     res.status(200).json(patients);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
@@ -36,9 +39,13 @@ export const getAllPatients = async (req, res) => {
 export const getPatientById = async (req, res) => {
   try {
     const { id } = req.params;
-    const [patient] = await db.execute("SELECT * FROM patients WHERE patient_id = ?", [id]);
-    if (patient.length === 0) return res.status(404).json({ message: "Patient not found" });
-    res.status(200).json(patient[0]);
+    const [rows] = await db.query("SELECT * FROM patients WHERE patient_id = ?", [id]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Patient not found" });
+    }
+
+    res.status(200).json(rows[0]);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
@@ -50,11 +57,19 @@ export const updatePatient = async (req, res) => {
     const { id } = req.params;
     const { first_name, last_name, gender, age, contact_number, address, email, status } = req.body;
 
-    await db.execute(
-      `UPDATE patients SET first_name=?, last_name=?, gender=?, age=?, contact_number=?, address=?, email=?, status=?
-       WHERE patient_id=?`,
-      [first_name, last_name, gender, age, contact_number, address, email, status, id]
-    );
+    const sql = `
+      UPDATE patients 
+      SET first_name=?, last_name=?, gender=?, age=?, contact_number=?, address=?, email=?, status=?
+      WHERE patient_id=?
+    `;
+
+    const [result] = await db.query(sql, [
+      first_name, last_name, gender, age, contact_number, address, email, status, id
+    ]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Patient not found" });
+    }
 
     res.status(200).json({ message: "Patient updated successfully" });
   } catch (error) {
@@ -66,7 +81,12 @@ export const updatePatient = async (req, res) => {
 export const deletePatient = async (req, res) => {
   try {
     const { id } = req.params;
-    await db.execute("DELETE FROM patients WHERE patient_id = ?", [id]);
+    const [result] = await db.query("DELETE FROM patients WHERE patient_id = ?", [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Patient not found" });
+    }
+
     res.status(200).json({ message: "Patient deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error" });

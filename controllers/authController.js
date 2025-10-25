@@ -14,27 +14,32 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
+    const trimmedUsername = username.trim();
+    const trimmedEmail = email.trim();
+
     // Check if user exists by username or email
     const [existingUser] = await db.execute(
       "SELECT * FROM users WHERE username = ? OR email = ?",
-      [username, email]
+      [trimmedUsername, trimmedEmail]
     );
 
     if (existingUser.length > 0) {
       return res.status(400).json({ message: "Username or Email already exists" });
     }
 
-    const hashedPassword = bcrypt.hashSync(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     await db.execute(
       `INSERT INTO users (username, password, full_name, email, role) 
        VALUES (?, ?, ?, ?, ?)`,
-      [username, hashedPassword, full_name, email, role]
+
+      [trimmedUsername, hashedPassword, full_name.trim(), trimmedEmail, role]
     );
 
     res.status(201).json({ message: "User registered successfully" });
+
   } catch (err) {
-    console.error(err);
+    console.error("Registration Error:", err);
     res.status(500).json({ message: "Server Error", error: err });
   }
 };
@@ -44,18 +49,26 @@ export const loginUser = async (req, res) => {
   try {
     const { username, password } = req.body;
 
+    if (!username || !password) {
+      return res.status(400).json({ message: "Username and Password are required" });
+    }
+
     const [user] = await db.execute(
       "SELECT * FROM users WHERE username = ?",
-      [username]
+      [username.trim()]
     );
 
     if (user.length === 0) {
-      return res.status(400).json({ message: "Invalid Username or Password" });
+      return res.status(401).json({ message: "Invalid username or password" });
     }
 
-    const validPassword = bcrypt.compareSync(password, user[0].password);
+    const validPassword = await bcrypt.compare(password, user[0].password);
     if (!validPassword) {
-      return res.status(400).json({ message: "Invalid Username or Password" });
+      return res.status(401).json({ message: "Invalid username or password" });
+    }
+
+    if (!process.env.JWT_SECRET) {
+      console.warn("⚠️ Missing JWT_SECRET in .env file");
     }
 
     const token = jwt.sign(
@@ -75,8 +88,9 @@ export const loginUser = async (req, res) => {
         role: user[0].role,
       },
     });
+
   } catch (err) {
-    console.error(err);
+    console.error("Login Error:", err);
     res.status(500).json({ message: "Server Error", error: err });
   }
 };
