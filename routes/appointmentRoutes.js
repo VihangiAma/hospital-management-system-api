@@ -1,13 +1,14 @@
 import express from "express";
 import {
   getAvailableSlots,
-  bookAppointment,
-  createAppointment,
+ // bookAppointment,
+  scheduleAppointment,
   getAllAppointments,
   getAppointmentById,
   updateAppointmentStatus,
   deleteAppointment,
-  checkDoctorAvailability
+  checkDoctorAvailability,
+  getUpcomingAppointments
 } from "../controllers/appointmentController.js";
 
 const router = express.Router();
@@ -19,10 +20,10 @@ router.post("/check-availability", checkDoctorAvailability);
 router.get("/available-slots", getAvailableSlots);
 
 //  Book appointment with double booking prevention
-router.post("/book", bookAppointment);
+//router.post("/book", bookAppointment);
 
 //  Create appointment (manual create - Admin/Reception)
-router.post("/", createAppointment);
+router.post("/", scheduleAppointment);
 
 //  Get all appointments
 router.get("/", getAllAppointments);
@@ -35,5 +36,8 @@ router.put("/:id", updateAppointmentStatus);
 
 //  Delete appointment
 router.delete("/:id", deleteAppointment);
+
+//get upcoming appointments for a patient
+router.get("/upcoming/:patient_id", getUpcomingAppointments);
 
 export default router;

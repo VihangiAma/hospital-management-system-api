@@ -111,32 +111,42 @@ export const bookAppointment = async (req, res) => {
 };
 
 
-// ➕ Create Appointment
-export const createAppointment = async (req, res) => {
+/**
+ * Schedule appointment via stored procedure sp_schedule_appointment
+ */
+export const scheduleAppointment = async (req, res) => {
   try {
-    const { appointment_code, patient_id, doctor_id, department, appointment_date, appointment_time, notes } = req.body;
+    const {
+      appointment_code, // optional (trigger can generate)
+      patient_id,
+      doctor_id,
+      department,
+      appointment_date,
+      appointment_time,
+      notes
+    } = req.body;
 
     if (!patient_id || !doctor_id || !appointment_date || !appointment_time) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    const [result] = await db.execute(
-      `INSERT INTO appointments (appointment_code, patient_id, doctor_id, department, appointment_date, appointment_time, notes, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'Scheduled')`,
-      [appointment_code, patient_id, doctor_id, department, appointment_date, appointment_time, notes || null]
-    );
+    // Use stored procedure
+    await db.query("CALL sp_schedule_appointment(?,?,?,?,?,?,?)", [
+      appointment_code || null,
+      patient_id,
+      doctor_id,
+      department || null,
+      appointment_date,
+      appointment_time,
+      notes || null
+    ]);
 
-    return res.status(201).json({
-      message: "Appointment created successfully",
-      appointment_id: result.insertId
-    });
-
-  } catch (error) {
-    console.error("Error creating appointment:", error);
-    res.status(500).json({ message: "Server error", error });
+    res.status(201).json({ message: "Appointment scheduled successfully" });
+  } catch (err) {
+    console.error("Error scheduling appointment:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
-
 
 // 📋 Get all appointments
 export const getAllAppointments = async (req, res) => {
@@ -218,5 +228,19 @@ export const deleteAppointment = async (req, res) => {
     res.status(200).json({ message: "Appointment deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+/**
+ * Return upcoming appointments view (view_upcoming_appointments)
+ */
+export const getUpcomingAppointments = async (req, res) => {
+  try {
+    const [rows] = await db.execute("SELECT * FROM view_upcoming_appointments ORDER BY appointment_date, appointment_time");
+    res.status(200).json(rows);
+  } catch (err) {
+    console.error("Error fetching upcoming appointments:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };

@@ -1,27 +1,42 @@
 import db from "../config/db.js";
 
-// ➕ Add patient
+/**
+ * Add patient via stored procedure sp_add_patient
+ * Uses stored procedure created in your SQL (sp_add_patient)
+ */
 export const addPatient = async (req, res) => {
   try {
-    const { patient_code, first_name, last_name, gender, age, contact_number, address, email } = req.body;
+    const {
+      patient_code, // optional (trigger will generate if omitted)
+      first_name,
+      last_name,
+      gender,
+      age,
+      contact_number,
+      address,
+      email
+    } = req.body;
 
     if (!first_name || !last_name || !gender || !contact_number) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    const sql = `
-      INSERT INTO patients (patient_code, first_name, last_name, gender, age, contact_number, address, email)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-
-    await db.query(sql, [
-      patient_code, first_name, last_name, gender, age, contact_number, address, email
+    // Call stored procedure. If patient_code is null the trigger still generates it.
+    await db.query("CALL sp_add_patient(?,?,?,?,?,?,?,?)", [
+      patient_code || null,
+      first_name,
+      last_name,
+      gender,
+      age || null,
+      contact_number,
+      address || null,
+      email || null
     ]);
 
     res.status(201).json({ message: "Patient added successfully" });
   } catch (error) {
     console.error("Add patient error:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -94,5 +109,19 @@ export const deletePatient = async (req, res) => {
   } catch (err) {
     console.error("❌ Error deleting patient:", err);
     res.status(500).json({ message: "Error deleting patient", error: err.message });
+  }
+};
+
+
+/**
+ * Get patient summary view (uses view_patient_summary)
+ */
+export const getPatientSummary = async (req, res) => {
+  try {
+    const [rows] = await db.execute("SELECT * FROM view_patient_summary ORDER BY last_appointment DESC");
+    res.status(200).json(rows);
+  } catch (err) {
+    console.error("Error fetching patient summary:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
