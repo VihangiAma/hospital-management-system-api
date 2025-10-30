@@ -8,16 +8,16 @@ import {
 
 const router = express.Router();
 
-// ➕ Assign a shift
-router.post("/assign", assignShift);
+/// ➕ Assign new shift
+router.post("/", assignShift);
 
-// 📋 Get shifts (with filters)
+// 📋 Get all or filtered shifts
 router.get("/", getShifts);
 
 // ✏ Update a shift
-router.put("/update/:shift_id", updateShift);
+router.put("/:shift_id", updateShift);
 
 // ❌ Delete a shift
-router.delete("/delete/:shift_id", deleteShift);
+router.delete("/:shift_id", deleteShift);
 
 export default router;

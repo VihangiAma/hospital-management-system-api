@@ -183,21 +183,29 @@ export const getAppointmentById = async (req, res) => {
 
 
 // ✏️ Update appointment
-export const updateAppointment = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { doctor_id, department, appointment_date, appointment_time, status, notes } = req.body;
+export const updateAppointmentStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
 
-    await db.execute(
-      `UPDATE appointments
-       SET doctor_id=?, department=?, appointment_date=?, appointment_time=?, status=?, notes=?
-       WHERE appointment_id=?`,
-      [doctor_id, department, appointment_date, appointment_time, status, notes, id]
+  try {
+    if (!status) {
+      return res.status(400).json({ message: "Status is required" });
+    }
+
+    // Make sure the column name matches your DB (likely `status`)
+    const [result] = await db.execute(
+      "UPDATE appointments SET status = ? WHERE appointment_id = ?",
+      [status, id]
     );
 
-    res.status(200).json({ message: "Appointment updated successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+
+    res.status(200).json({ message: "Appointment status updated successfully" });
+  } catch (err) {
+    console.error("Error updating appointment status:", err);
+    res.status(500).json({ message: "Server error", error: err });
   }
 };
 

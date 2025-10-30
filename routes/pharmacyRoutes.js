@@ -6,10 +6,10 @@ import {
 } from "../controllers/supplierController.js";
 
 import {
-  addMedicine, getMedicines, updateMedicine, deleteMedicine
+  addMedicine, getMedicines, updateMedicine, deleteMedicine,getLowStockAlerts
 } from "../controllers/medicineController.js";
 
-import { issueMedicine } from "../controllers/issuedMedicineController.js";
+import { issueMedicine,getIssuedMedicines } from "../controllers/issuedMedicineController.js";
 
 const router = express.Router();
 
@@ -27,5 +27,10 @@ router.delete("/medicines/:id", verifyToken, authorizeRoles("Pharmacist"), delet
 
 // Issue Medicine
 router.post("/medicines/issue", verifyToken, authorizeRoles("Pharmacist"), issueMedicine);
+router.get("/medicines/issued", verifyToken, authorizeRoles("Pharmacist"), getIssuedMedicines);
+
+
+// ✅ Low Stock / Expiry Alert Route
+router.get("/medicines/alerts", verifyToken, authorizeRoles("Pharmacist", "Admin"), getLowStockAlerts);
 
 export default router;

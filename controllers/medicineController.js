@@ -59,3 +59,27 @@ export const deleteMedicine = async (req, res) => {
     res.status(500).json({ message: "Server Error", error: err });
   }
 };
+
+
+// Get Low Stock / Expired Medicines
+
+export const getLowStockAlerts = async (req, res) => {
+  try {
+    const [alerts] = await db.execute(`
+      SELECT m.*, s.name AS supplier_name
+      FROM medicines m
+      LEFT JOIN suppliers s ON m.supplier_id = s.supplier_id
+      WHERE m.status IN ('Out of Stock', 'Expired')
+    `);
+
+    if (alerts.length === 0) {
+      return res.status(200).json({ message: "No low stock or expired medicines found", data: [] });
+    }
+
+    res.status(200).json({ message: "Low stock / expired medicines fetched successfully", data: alerts });
+  } catch (err) {
+    console.error("Error fetching low stock alerts:", err);
+    res.status(500).json({ message: "Server Error", error: err.message });
+  }
+};
+

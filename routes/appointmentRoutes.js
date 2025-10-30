@@ -5,7 +5,7 @@ import {
   createAppointment,
   getAllAppointments,
   getAppointmentById,
-  updateAppointment,
+  updateAppointmentStatus,
   deleteAppointment,
   checkDoctorAvailability
 } from "../controllers/appointmentController.js";
@@ -31,7 +31,7 @@ router.get("/", getAllAppointments);
 router.get("/:id", getAppointmentById);
 
 //  Update appointment
-router.put("/:id", updateAppointment);
+router.put("/:id", updateAppointmentStatus);
 
 //  Delete appointment
 router.delete("/:id", deleteAppointment);

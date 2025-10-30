@@ -77,18 +77,22 @@ export const updatePatient = async (req, res) => {
   }
 };
 
-// 🗑 Delete patient
 export const deletePatient = async (req, res) => {
   try {
     const { id } = req.params;
-    const [result] = await db.query("DELETE FROM patients WHERE patient_id = ?", [id]);
 
-    if (result.affectedRows === 0) {
+    // Check if patient exists
+    const [patient] = await db.execute("SELECT * FROM patients WHERE patient_id = ?", [id]);
+    if (patient.length === 0) {
       return res.status(404).json({ message: "Patient not found" });
     }
 
+    // Delete patient record
+    await db.execute("DELETE FROM patients WHERE patient_id = ?", [id]);
     res.status(200).json({ message: "Patient deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
+
+  } catch (err) {
+    console.error("❌ Error deleting patient:", err);
+    res.status(500).json({ message: "Error deleting patient", error: err.message });
   }
 };

@@ -16,7 +16,8 @@ import staffRoutes from "./routes/staffRoutes.js";
 import billingRoutes from "./routes/billingRoutes.js";
 import staffShiftsRoutes from './routes/staffShiftsRoutes.js';
 import purchaseOrderRoutes from "./routes/purchaseOrderRoutes.js";
-
+import insuranceRoutes from "./routes/insuranceRoutes.js";
+import departmentRoutes from "./routes/departmentsRoute.js";
 
 
 
@@ -47,6 +48,8 @@ app.use("/api/staff", staffRoutes);
 app.use("/api/billing", billingRoutes);
 app.use('/api/shifts', staffShiftsRoutes);
 app.use("/api/purchase-orders", purchaseOrderRoutes);
+app.use("/api/insurance", insuranceRoutes);
+app.use("/api", departmentRoutes);
 
 
 const PORT = process.env.PORT || 5000;
