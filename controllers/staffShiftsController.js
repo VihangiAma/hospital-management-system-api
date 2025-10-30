@@ -83,3 +83,15 @@ export const deleteShift = async (req, res) => {
     res.status(500).json({ message: "Error deleting shift", error: err });
   }
 };
+
+// 📊 Get shift count for a staff or doctor
+export const getShiftCount = async (req, res) => {
+  const { id, type } = req.query; // type = 'staff' or 'doctor'
+  try {
+    const [rows] = await db.execute("SELECT fn_count_shifts(?, ?) AS total_shifts", [id, type]);
+    res.status(200).json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching shift count", error: err });
+  }
+};
+

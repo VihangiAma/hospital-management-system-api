@@ -1,28 +1,22 @@
 import db from "../config/db.js";
 
-// 🧾 Create Purchase Order (Trigger-based total calculation)
-// 🧾 Create Purchase Order (with items)
 export const createPurchaseOrder = async (req, res) => {
   const connection = await db.getConnection();
   try {
-    const { order_code, supplier_id, order_date, items } = req.body;
-
-    if (!supplier_id || !items || items.length === 0) {
-      return res.status(400).json({ message: "Supplier and items are required" });
-    }
+    const { supplier_id, order_code, order_date, items } = req.body;
 
     await connection.beginTransaction();
 
-    // Step 1️⃣: Create the main order first (set total_amount = 0 temporarily)
-    const [orderResult] = await connection.execute(
-      `INSERT INTO purchase_orders (order_code, supplier_id, order_date, total_amount, status)
-       VALUES (?, ?, ?, 0, 'Pending')`,
-      [order_code, supplier_id, order_date || new Date()]
-    );
+    // Use stored procedure for order creation
+    await connection.query("CALL sp_create_purchase_order(?, ?, ?)", [
+      supplier_id,
+      order_code,
+      order_date
+    ]);
 
-    const order_id = orderResult.insertId;
+    const [[{ LAST_INSERT_ID: order_id }]] = await connection.query("SELECT LAST_INSERT_ID()");
 
-    // Step 2️⃣: Insert each item and calculate subtotal
+    // Insert items manually
     for (const item of items) {
       await connection.execute(
         `INSERT INTO purchase_order_items (order_id, medicine_id, quantity, unit_price, subtotal)
@@ -31,28 +25,16 @@ export const createPurchaseOrder = async (req, res) => {
       );
     }
 
-    // Step 3️⃣: Auto update total using SQL SUM query
-    await connection.execute(
-      `UPDATE purchase_orders 
-       SET total_amount = (
-         SELECT SUM(subtotal) FROM purchase_order_items WHERE order_id = ?
-       )
-       WHERE order_id = ?`,
-      [order_id, order_id]
-    );
-
     await connection.commit();
-
     res.status(201).json({ message: "Purchase order created successfully", order_id });
   } catch (err) {
     await connection.rollback();
-    console.error("❌ Error creating order:", err);
+    console.error("❌ Purchase order error:", err);
     res.status(500).json({ message: "Server Error", error: err });
   } finally {
     connection.release();
   }
 };
-
 
 // 📋 Get All Purchase Orders
 export const getPurchaseOrders = async (req, res) => {

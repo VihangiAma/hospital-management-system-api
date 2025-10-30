@@ -5,6 +5,7 @@ import {
   getDoctorById,
   updateDoctor,
   deleteDoctor,
+  getDoctorWeeklySchedule
 } from "../controllers/doctorController.js";
 import { verifyToken, allowRoles } from "../middleware/authMiddleware.js";
 
@@ -18,5 +19,6 @@ router.delete("/:id", verifyToken, allowRoles("Admin"), deleteDoctor);
 // All Roles Can View Doctors
 router.get("/", verifyToken, allowRoles("Admin", "Pharmacist", "Accountant"), getDoctors);
 router.get("/:id", verifyToken, allowRoles("Admin", "Pharmacist", "Accountant"), getDoctorById);
+router.get("/schedule/weekly", verifyToken, allowRoles("Admin", "Pharmacist", "Accountant"), getDoctorWeeklySchedule);
 
 export default router;

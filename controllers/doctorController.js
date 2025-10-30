@@ -111,3 +111,13 @@ export const deleteDoctor = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err });
   }
 };
+
+// 📅 Get Doctor Weekly Schedule from view
+export const getDoctorWeeklySchedule = async (req, res) => {
+  try {
+    const [rows] = await db.query("SELECT * FROM v_doctor_weekly_schedule");
+    res.status(200).json(rows);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching weekly doctor schedule", error: err });
+  }
+};
